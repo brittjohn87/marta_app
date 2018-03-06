@@ -13,18 +13,25 @@ class LocationsController < ApplicationController
   # GET /locations/1
   # GET /locations/1.json
   def show
-    @buses = HTTParty.get('http://developer.itsmarta.com/BRDRestService/RestBusRealTimeService/GetAllBus')
 
-    @bus_count = 0
+    if valid_location(@location)
 
-    @nearby_buses = []
+      @buses = HTTParty.get('http://developer.itsmarta.com/BRDRestService/RestBusRealTimeService/GetAllBus')
 
-    @buses.each do |bus|
-      if nearby(@location.longitude, @location.latitude, 
-        bus["LONGITUDE"].to_f, bus["LATITUDE"].to_f)
-        @bus_count += 1
-        @nearby_buses.push(bus)
+      @bus_count = 0
+
+      @nearby_buses = []
+
+      @buses.each do |bus|
+        if nearby(@location.longitude, @location.latitude, 
+          bus["LONGITUDE"].to_f, bus["LATITUDE"].to_f)
+          @bus_count += 1
+          @nearby_buses.push(bus)
+        end
       end
+
+    else
+      redirect_to root_path, notice: "Location not found, please enter a new address"
     end
   end
 
@@ -42,15 +49,15 @@ class LocationsController < ApplicationController
   def create
     @location = Location.new(location_params)
 
-    respond_to do |format|
-      if @location.save
-        format.html { redirect_to @location }
-        format.json { render :show, status: :created, location: @location }
-      else
-        format.html { render :new }
-        format.json { render json: @location.errors, status: :unprocessable_entity }
+      respond_to do |format|
+        if @location.save
+          format.html { redirect_to @location }
+          format.json { render :show, status: :created, location: @location }
+        else
+          format.html { render :new }
+          format.json { render json: @location.errors, status: :unprocessable_entity }
+        end
       end
-    end
   end
 
   # PATCH/PUT /locations/1
